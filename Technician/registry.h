@@ -5,7 +5,7 @@
 
 // Registry path to the Logon process 
 
-constexpr HKEY LOGON_KEY{ HKEY_CURRENT_USER };
+const HKEY LOGON_KEY{ HKEY_CURRENT_USER };
 constexpr LPCWSTR LOGON_SUBKEY{ L"SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run" };
 
 /* Open the Logon key entry int the registry */

@@ -12,6 +12,7 @@ HKEY openLogonRegistryEntry() {
 
 
 void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
+    DWORD cbDataSize;
     LSTATUS status;
     status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
     switch (status) {
@@ -20,7 +21,7 @@ void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
             break;
         case ERROR_FILE_NOT_FOUND:
             // couldn't find, add a value with the given name and data to the registry
-            DWORD cbDataSize = (wcslen(lpValueData) + 1) * sizeof(WCHAR);
+            cbDataSize = static_cast<DWORD>((wcslen(lpValueData) + 1) * sizeof(WCHAR));
             status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
             if (status != ERROR_SUCCESS) {
                 throw std::runtime_error("Failed to set registry value");
@@ -29,6 +30,7 @@ void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
             break;
         default:
             throw std::runtime_error("Failed to read registry value");
+            break;
     }
 }
 
