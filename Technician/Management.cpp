@@ -8,6 +8,9 @@ ManagementProgram::ManagementProgram() {
     if (ghMutex == NULL) {
         throw std::runtime_error("Mutex creation failed");
     }
+
+    // initialize the server
+    server = Server(DEFAULT_PORT);
 }
 
 
@@ -27,5 +30,8 @@ void ManagementProgram::showMessageBox() {
 
 
 void ManagementProgram::runProgram() {
-    Sleep(HOUR_IN_MILLISECONDS);
+    server.startListening();
+    server.acceptClient();
+    server.handleClient();
+    server.disconnectClient();
 }

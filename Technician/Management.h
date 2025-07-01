@@ -1,7 +1,9 @@
 #pragma once
 
 #include <windows.h>
+#include "server.h"
 
+constexpr PCSTR DEFAULT_PORT{"12345"};
 constexpr DWORD HOUR_IN_MILLISECONDS{ 1000 * 60 * 60 };  // 1 hour = 1000 milliseconds * 60 seconds * 60 minutes
 constexpr LPCWSTR PROGRAM_MESSAGE{ L"MANAGEMENT PROGRAM IS UP" };
 constexpr LPCWSTR PROGRAM_TITLE{ L"MANAGEMENT PROGRAM" };
@@ -18,4 +20,5 @@ public:
 	void runProgram();
 private:
 	HANDLE ghMutex;
+    Server server;
 };
