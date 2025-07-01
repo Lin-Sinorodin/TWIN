@@ -17,10 +17,7 @@ ManagementProgram::~ManagementProgram() {
 
 
 void ManagementProgram::setLogonRegistryEntry() {
-    LSTATUS status = addLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
-    if (status != ERROR_SUCCESS) {
-        throw std::runtime_error("Set entry in registry logon failed");
-    }
+    addLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
 }
 
 
