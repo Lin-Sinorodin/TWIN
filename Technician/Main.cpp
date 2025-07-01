@@ -17,7 +17,7 @@ int main() {
     }
 
     // try to add a registry entry to run this file on login
-    LSTATUS status = AddLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
+    LSTATUS status = addLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
     if (status != ERROR_SUCCESS) {
         return EXIT_FAILURE;
     }

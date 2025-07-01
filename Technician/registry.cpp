@@ -1,7 +1,7 @@
 #include "Registry.h"
 
 
-LSTATUS AddRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
+LSTATUS addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
     LSTATUS status;
     status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
     if (status == ERROR_FILE_NOT_FOUND) {
@@ -12,7 +12,7 @@ LSTATUS AddRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
             std::cout << "[!] Failed to create registry value, error code: " << status << std::endl;
         }
         else {
-            std::cout << "[+] Created registry value" << std::endl;
+            std::cout << "[+] Set registry value" << std::endl;
         }
     }
     else if (status == ERROR_SUCCESS) {
@@ -25,7 +25,7 @@ LSTATUS AddRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
 }
 
 
-LSTATUS AddLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
+LSTATUS addLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
     HKEY hKey = 0;
     LSTATUS status;
 
@@ -36,7 +36,7 @@ LSTATUS AddLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
         return status;
     }
 
-    status = AddRegistryEntry(hKey, lpValueName, lpValueData);
+    status = addRegistryEntry(hKey, lpValueName, lpValueData);
 
     RegCloseKey(hKey);
     return status;
