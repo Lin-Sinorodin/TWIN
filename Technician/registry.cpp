@@ -6,7 +6,8 @@ LSTATUS AddRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
     status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
     if (status == ERROR_FILE_NOT_FOUND) {
         // couldn't find, add a value with the given name and data to the registry
-        status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, sizeof(lpValueData));
+        DWORD cbDataSize = (wcslen(lpValueData) + 1) * sizeof(WCHAR);
+        status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
         if (status != ERROR_SUCCESS) {
             std::cout << "[!] Failed to create registry value, error code: " << status << std::endl;
         }
