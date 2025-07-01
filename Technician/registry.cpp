@@ -1,4 +1,4 @@
-#include "registry.h"
+#include "Registry.h"
 
 
 LSTATUS AddRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {

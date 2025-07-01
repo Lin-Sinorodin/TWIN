@@ -1,5 +1,5 @@
-#include "management.h"
-#include "registry.h"
+#include "Main.h"
+#include "Registry.h"
 
 constexpr DWORD HOUR_IN_MILLISECONDS{ 1000 * 60 * 60 };  // 1 hour = 1000 milliseconds * 60 seconds * 60 minutes
 constexpr LPCWSTR PROGRAM_MESSAGE{ L"MANAGEMENT PROGRAM IS UP" };

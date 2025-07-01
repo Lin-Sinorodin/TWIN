@@ -1,6 +1,7 @@
 #pragma once
 
-#include "pch.h"
+#include <windows.h>
+#include <iostream>
 
 // Registry path to the Logon process 
 
