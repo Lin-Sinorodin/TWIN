@@ -1,43 +1,40 @@
 #include "Registry.h"
 
 
-LSTATUS addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
-    LSTATUS status;
-    status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
-    if (status == ERROR_FILE_NOT_FOUND) {
-        // couldn't find, add a value with the given name and data to the registry
-        DWORD cbDataSize = (wcslen(lpValueData) + 1) * sizeof(WCHAR);
-        status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
-        if (status != ERROR_SUCCESS) {
-            std::cout << "[!] Failed to create registry value, error code: " << status << std::endl;
-        }
-        else {
-            std::cout << "[+] Set registry value" << std::endl;
-        }
+HKEY openLogonRegistryEntry() {
+    HKEY hKey = 0;
+    LSTATUS status = RegOpenKeyEx(LOGON_KEY, LOGON_SUBKEY, 0, KEY_READ | KEY_SET_VALUE, &hKey);
+    if (status != ERROR_SUCCESS) {
+        throw std::runtime_error("Failed to open Logon registry");
     }
-    else if (status == ERROR_SUCCESS) {
-        std::cout << "[+] Found registry value" << std::endl;
-    }
-    else {
-        std::cout << "[-] Failed to read registry value, error code: " << status << std::endl;
-    }
-    return status;
+    return hKey;
 }
 
 
-LSTATUS addLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
-    HKEY hKey = 0;
+void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
     LSTATUS status;
-
-    // open the Logon registry
-    status = RegOpenKeyEx(LOGON_KEY, LOGON_SUBKEY, 0, KEY_READ | KEY_SET_VALUE, &hKey);
-    if (status != ERROR_SUCCESS) {
-        std::cout << "[!] Failed to open run registry, error code: " << status << std::endl;
-        return status;
+    status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
+    switch (status) {
+        case ERROR_SUCCESS:
+            std::cout << "[+] Found registry value" << std::endl;
+            break;
+        case ERROR_FILE_NOT_FOUND:
+            // couldn't find, add a value with the given name and data to the registry
+            DWORD cbDataSize = (wcslen(lpValueData) + 1) * sizeof(WCHAR);
+            status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
+            if (status != ERROR_SUCCESS) {
+                throw std::runtime_error("Failed to set registry value");
+            }
+            std::cout << "[+] Set registry value" << std::endl;
+            break;
+        default:
+            throw std::runtime_error("Failed to read registry value");
     }
+}
 
-    status = addRegistryEntry(hKey, lpValueName, lpValueData);
 
+void addLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
+    HKEY hKey = openLogonRegistryEntry();
+    addRegistryEntry(hKey, lpValueName, lpValueData);
     RegCloseKey(hKey);
-    return status;
 }
