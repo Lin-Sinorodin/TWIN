@@ -1,0 +1,8 @@
+#include "management.h"
+
+#define PROGRAM_MESSAGE L"MANAGEMENT PROGRAM IS UP"
+#define PROGRAM_TITLE L"MANAGEMENT PROGRAM"
+
+int main() {
+	MessageBox(NULL, PROGRAM_MESSAGE, PROGRAM_TITLE, MB_OK);
+}
