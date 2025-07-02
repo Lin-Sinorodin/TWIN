@@ -2,7 +2,7 @@
 #include "Registry.h"
 
 
-ManagementProgram::ManagementProgram() {
+ManagementProgram::ManagementProgram() : server(DEFAULT_PORT) {
     m_ghMutex = CreateMutex(NULL, FALSE, PROGRAM_TITLE);
     if (m_ghMutex == NULL) {
         throw std::runtime_error("Failed to create mutex");
@@ -31,5 +31,8 @@ void ManagementProgram::showMessageBox() {
 
 
 void ManagementProgram::runProgram() {
-    Sleep(HOUR_IN_MILLISECONDS);
+    server.startListening();
+    server.acceptClient();
+    server.handleClient();
+    server.disconnectClient();
 }
