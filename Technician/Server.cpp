@@ -123,6 +123,17 @@ void Server::disconnectClient() {
 }
 
 
+Command Server::resolveCommand(string command) {
+    if (command.compare("PING") == 0) {
+        return PING_COMMAND;
+    } else if (command.compare("RUN") == 0) {
+        return RUN_COMMAND;
+    } else {
+        return UNKNOWN_COMMAND;
+    }
+}
+
+
 string Server::recvCommand() {
     int recvBytes;
     char commandLenBuffer[MESSAGE_LEN_SIZE];  // store the length of the message
@@ -180,13 +191,42 @@ void Server::sendResponse(string response) {
 }
 
 
-void Server::handleCommand() {
-    std::string command = recvCommand();
+string handleRunCommand(string filePath) {
+    string response{};
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
 
-    // generate the response message
-    if (command.compare("PING") == 0) {
-        sendResponse("PONG");
-    } else {
-        sendResponse("Unknown command");
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    BOOL succeed = CreateProcessA(
+        filePath.c_str(), NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi
+    );
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    if (succeed) {
+        response += "Succeed";
+    }
+    else {
+        response += "Failed, error code: " + std::to_string(GetLastError());
+    }
+    return response;
+}
+
+void Server::handleCommand() {
+    string command = recvCommand();
+
+    switch(resolveCommand(command)) {
+        case PING_COMMAND:
+            sendResponse("PONG");
+            break;
+        case RUN_COMMAND:
+            command = recvCommand();
+            sendResponse(handleRunCommand(command));
+            break;
+        case UNKNOWN_COMMAND:
+            sendResponse("Unknown command");
+            break;
     }
 }
