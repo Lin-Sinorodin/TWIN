@@ -3,10 +3,13 @@
 
 
 ManagementProgram::ManagementProgram() {
-    // create mutex and own it to ensure this program runs only one time
-    ghMutex = CreateMutex(NULL, TRUE, NULL);
-    if (ghMutex == NULL) {
-        throw std::runtime_error("Mutex creation failed");
+    m_ghMutex = CreateMutex(NULL, FALSE, PROGRAM_TITLE);
+    if (m_ghMutex == NULL) {
+        throw std::runtime_error("Failed to create mutex");
+    }
+    
+    if (GetLastError() == ERROR_ALREADY_EXISTS) {
+        throw std::runtime_error("Mutex already owned");
     }
 
     // initialize the server
@@ -15,12 +18,13 @@ ManagementProgram::ManagementProgram() {
 
 
 ManagementProgram::~ManagementProgram() {
-    CloseHandle(ghMutex);
+    CloseHandle(m_ghMutex);
 }
 
 
 void ManagementProgram::setLogonRegistryEntry() {
-    addLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
+    Registry logonRegistry{ LOGON_KEY, LOGON_SUBKEY };
+    logonRegistry.addEntryIfNotExists(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
 }
 
 

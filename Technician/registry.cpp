@@ -1,20 +1,35 @@
 #include "Registry.h"
 
 
-HKEY openLogonRegistryEntry() {
-    HKEY hKey = 0;
-    LSTATUS status = RegOpenKeyEx(LOGON_KEY, LOGON_SUBKEY, 0, KEY_READ | KEY_SET_VALUE, &hKey);
-    if (status != ERROR_SUCCESS) {
-        throw std::runtime_error("Failed to open Logon registry");
-    }
-    return hKey;
+RegistryException::RegistryException(std::string error, LSTATUS code) : m_error(std::move(error)) {
+    m_error += " (code = " + std::to_string(code) + ")";
 }
 
 
-void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
+const char* RegistryException::what() const noexcept{
+    return m_error.c_str();
+}
+
+
+Registry::Registry(HKEY mainKey, LPCWSTR subKey) : m_hMainKey(mainKey), m_lpSubKey(subKey), m_hKey(0) {
+    LSTATUS status = RegOpenKeyEx(m_hMainKey, m_lpSubKey, 0, DEFAULT_ACCESS_RIGHTS, &m_hKey);
+    if (status != ERROR_SUCCESS) {
+        throw RegistryException("Open registry key failed", status);
+    }
+}
+
+
+Registry::~Registry() {
+    if (m_hKey > 0) {
+        RegCloseKey(m_hKey);
+    }
+}
+
+
+void Registry::addEntryIfNotExists(LPCWSTR lpValueName, LPCWSTR lpValueData) {
     DWORD cbDataSize;
     LSTATUS status;
-    status = RegGetValueW(hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
+    status = RegGetValueW(m_hKey, NULL, lpValueName, RRF_RT_REG_SZ, NULL, NULL, NULL);
     switch (status) {
         case ERROR_SUCCESS:
             std::cout << "[+] Found registry value" << std::endl;
@@ -22,21 +37,13 @@ void addRegistryEntry(HKEY hKey, LPCWSTR lpValueName, LPCWSTR lpValueData) {
         case ERROR_FILE_NOT_FOUND:
             // couldn't find, add a value with the given name and data to the registry
             cbDataSize = static_cast<DWORD>((wcslen(lpValueData) + 1) * sizeof(WCHAR));
-            status = RegSetKeyValueW(hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
+            status = RegSetKeyValueW(m_hKey, NULL, lpValueName, REG_SZ, lpValueData, cbDataSize);
             if (status != ERROR_SUCCESS) {
-                throw std::runtime_error("Failed to set registry value");
+                throw RegistryException("Set registry value failed", status);
             }
             std::cout << "[+] Set registry value" << std::endl;
             break;
         default:
-            throw std::runtime_error("Failed to read registry value");
-            break;
+            throw RegistryException("Read registry value failed", status);
     }
-}
-
-
-void addLogonRegistryEntry(LPCWSTR lpValueName, LPCWSTR lpValueData) {
-    HKEY hKey = openLogonRegistryEntry();
-    addRegistryEntry(hKey, lpValueName, lpValueData);
-    RegCloseKey(hKey);
 }

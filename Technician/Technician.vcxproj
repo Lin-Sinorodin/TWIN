@@ -139,7 +139,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Main.h" />
     <ClInclude Include="Management.h" />
     <ClInclude Include="Registry.h" />
   </ItemGroup>

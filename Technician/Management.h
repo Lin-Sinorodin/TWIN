@@ -19,6 +19,6 @@ public:
 	void showMessageBox();
 	void runProgram();
 private:
-	HANDLE ghMutex;
+	HANDLE m_ghMutex;
     Server server;
 };

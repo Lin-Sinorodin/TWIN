@@ -1,11 +1,17 @@
-#include "Main.h"
+#include "Management.h"
 #include "Registry.h"
 
 
 int main() {
-    ManagementProgram prog = ManagementProgram{};
-    prog.setLogonRegistryEntry();
-    prog.showMessageBox();
-    prog.runProgram();
+    try {
+        ManagementProgram prog = ManagementProgram{};
+        prog.setLogonRegistryEntry();
+        prog.showMessageBox();
+        prog.runProgram();
+    }
+    catch (const std::exception& e) {
+        std::cerr << "[!] " << e.what() << std::endl;
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
