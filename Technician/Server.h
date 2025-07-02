@@ -68,7 +68,7 @@ private:
     Command resolveCommand(string command);
 
     /* Receive a command from the client, first msg is length and second is command. */
-    Command recvCommand();
+    string recvCommand();
 
     /* Send a response to the client, first msg is length and second is command. */
     void sendResponse(string response);

