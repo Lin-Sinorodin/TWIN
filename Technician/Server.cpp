@@ -123,7 +123,18 @@ void Server::disconnectClient() {
 }
 
 
-string Server::recvCommand() {
+Command Server::resolveCommand(string command) {
+    if (command.compare("PING") == 0) {
+        return PING_COMMAND;
+    } else if (command.compare("RUN") == 0) {
+        return RUN_COMMAND;
+    } else {
+        return UNKNOWN_COMMAND;
+    }
+}
+
+
+Command Server::recvCommand() {
     int recvBytes;
     char commandLenBuffer[MESSAGE_LEN_SIZE];  // store the length of the message
 
@@ -156,7 +167,7 @@ string Server::recvCommand() {
     delete[] commandBuffer;
 
     std::cout << "[+] (recv) command:  " << command << std::endl;
-    return command;
+    return resolveCommand(command);
 }
 
 
@@ -181,12 +192,16 @@ void Server::sendResponse(string response) {
 
 
 void Server::handleCommand() {
-    std::string command = recvCommand();
+    Command command = recvCommand();
 
-    // generate the response message
-    if (command.compare("PING") == 0) {
-        sendResponse("PONG");
-    } else {
-        sendResponse("Unknown command");
+    switch(command) {
+        case PING_COMMAND:
+            sendResponse("PONG");
+            break;
+        case RUN_COMMAND:
+            break;
+        case UNKNOWN_COMMAND:
+            sendResponse("Unknown command");
+            break;
     }
 }

@@ -24,6 +24,12 @@ constexpr int DEFAULT_SOCKTYPE{ SOCK_STREAM };
 constexpr int DEFAULT_PROTOCOL{ IPPROTO_TCP };
 constexpr int DEFAULT_FLAGS{ AI_PASSIVE };
 
+enum Command {
+    PING_COMMAND,
+    RUN_COMMAND,
+    UNKNOWN_COMMAND
+};
+
 
 /* The exception thrown by the Server class, appends the error code to the provide message. */
 class ServerException : public std::exception {
@@ -58,8 +64,11 @@ private:
     SOCKET ListenSocket;
     SOCKET ClientSocket;
 
+    /* Resolve the command from string to one of the types in the Command enum. */
+    Command resolveCommand(string command);
+
     /* Receive a command from the client, first msg is length and second is command. */
-    string recvCommand();
+    Command recvCommand();
 
     /* Send a response to the client, first msg is length and second is command. */
     void sendResponse(string response);
