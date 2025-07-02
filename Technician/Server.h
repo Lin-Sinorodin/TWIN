@@ -12,7 +12,24 @@
 #pragma comment (lib, "Ws2_32.lib")
 
 using std::string;
+
+// default values
 constexpr DWORD MESSAGE_LEN_SIZE{ sizeof(DWORD) };
+constexpr int DEFAULT_FAMILY{ AF_INET };
+constexpr int DEFAULT_SOCKTYPE{ SOCK_STREAM };
+constexpr int DEFAULT_PROTOCOL{ IPPROTO_TCP };
+constexpr int DEFAULT_FLAGS{ AI_PASSIVE };
+
+
+/* The exception thrown by the Server class, appends the error code to the provide message. */
+class ServerException : public std::exception {
+public:
+    explicit ServerException(string error);
+    explicit ServerException(string error, DWORD code);
+    [[nodiscard]] const char* what() const noexcept override;
+private:
+    string m_error;
+};
 
 
 class Server {

@@ -1,13 +1,27 @@
 #include "server.h"
 
 using std::runtime_error;
+using std::to_string;
+
+
+ServerException::ServerException(string error) : m_error(std::move(error)) {}
+
+
+ServerException::ServerException(string error, DWORD code) : m_error(std::move(error)) {
+    m_error += " (code = " + to_string(code) + ")";
+}
+
+
+const char* ServerException::what() const noexcept{
+    return m_error.c_str();
+}
 
 
 Server::Server(PCSTR port) : m_port(port) {
     // initialize Winsock
-    iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
-    if (iResult != 0) {
-        throw runtime_error("WSAStartup failed");
+    int iCode = WSAStartup(MAKEWORD(2,2), &wsaData);
+    if (iCode != 0) {
+        throw ServerException("WSAStartup failed", iCode);
     }
 
     // initialize null sockets for later
@@ -15,76 +29,97 @@ Server::Server(PCSTR port) : m_port(port) {
     SOCKET ClientSocket = INVALID_SOCKET;
 }
 
+
 Server::~Server() {
+    // clean Winsock
     WSACleanup();
+
+    // clean sockets
+    if (ListenSocket != INVALID_SOCKET) {
+        closesocket(ListenSocket);
+    }
+    if (ClientSocket != INVALID_SOCKET) {
+        closesocket(ClientSocket);
+    }
 }
 
-void Server::startListening() {
-    int iResult;
-    struct addrinfo hints;
-    struct addrinfo *result = NULL;
 
-    ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_protocol = IPPROTO_TCP;
-    hints.ai_flags = AI_PASSIVE;
+void Server::startListening() {
+    int iCode;
+    ADDRINFOA hints;
+    PADDRINFOA result = NULL;
 
     // Resolve the server address and port
-    iResult = getaddrinfo(NULL, m_port, &hints, &result);
-    if (iResult != 0) {
-        throw runtime_error("getaddrinfo failed");
+    ZeroMemory(&hints, sizeof(hints));
+    hints.ai_family = DEFAULT_FAMILY;
+    hints.ai_socktype = DEFAULT_SOCKTYPE;
+    hints.ai_protocol = DEFAULT_PROTOCOL;
+    hints.ai_flags = DEFAULT_FLAGS;
+    iCode = getaddrinfo(NULL, m_port, &hints, &result);
+    if (iCode != 0) {
+        throw ServerException("getaddrinfo failed", iCode);
     }
 
     // Create a SOCKET for the server to listen for client connections.
     ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
     if (ListenSocket == INVALID_SOCKET) {
         freeaddrinfo(result);
-        throw runtime_error("socket failed");
+        throw ServerException("socket failed", WSAGetLastError());
     }
 
     // Setup the TCP listening socket
-    iResult = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
-    if (iResult == SOCKET_ERROR) {
+    iCode = bind(ListenSocket, result->ai_addr, (int)result->ai_addrlen);
+    if (iCode == SOCKET_ERROR) {
         freeaddrinfo(result);
-        closesocket(ListenSocket);
-        throw runtime_error("bind failed");
+        throw ServerException("bind failed", WSAGetLastError());
     }
     freeaddrinfo(result);
 
-    iResult = listen(ListenSocket, SOMAXCONN);
-    if (iResult == SOCKET_ERROR) {
-        closesocket(ListenSocket);
-        throw runtime_error("listen failed");
+    iCode = listen(ListenSocket, SOMAXCONN);
+    if (iCode == SOCKET_ERROR) {
+        throw ServerException("listen failed", WSAGetLastError());
     }
 }
 
+
 void Server::acceptClient() {
-    // Accept a client socket
     ClientSocket = accept(ListenSocket, NULL, NULL);
     if (ClientSocket == INVALID_SOCKET) {
-        closesocket(ListenSocket);
-        throw runtime_error("accept failed");
+        throw ServerException("accept failed", WSAGetLastError());
     }
+
+    // once we accept a client, we stop listening and only communicating with it
     closesocket(ListenSocket);
+    ListenSocket = INVALID_SOCKET;
 }
+
 
 void Server::handleClient() {
     while (TRUE) {
-        // TODO catch exceptions to escape infinite loop
-        handleCommand();
+        // TODO add option for connection closing in the communication protocol
+        try {
+            handleCommand();
+        } catch (const ServerException& e) {
+            std::err << "[!] ServerException: " << e.what() << std::endl;
+        } catch (const std::exception& e) {
+            std::err << "[!] Exception: " << e.what() << std::endl;
+        }
     }
 }
 
+
 void Server::disconnectClient() {
-    // shutdown the connection since we're done
-    iResult = shutdown(ClientSocket, SD_SEND);
-    if (iResult == SOCKET_ERROR) {
+    int iCode = shutdown(ClientSocket, SD_SEND);
+    if (iCode == SOCKET_ERROR) {
         closesocket(ClientSocket);
-        throw runtime_error("shutdown failed");
+        throw ServerException("shutdown failed", WSAGetLastError());
     }
+
+    // as a shutdown send to the client, there is no use for the socket
     closesocket(ClientSocket);
+    ClientSocket = INVALID_SOCKET;
 }
+
 
 string Server::recvCommand() {
     int resultBytes;
@@ -93,8 +128,11 @@ string Server::recvCommand() {
     // receive the length of the command message
     resultBytes = recv(ClientSocket, commandLenBuffer, MESSAGE_LEN_SIZE, 0);
     if (resultBytes != MESSAGE_LEN_SIZE) {
-        // TODO replace with custom message that can be caught later
-        throw runtime_error("invalid message, expected length of type DWORD")
+        throw ServerException("invalid message length, expected DWORD");
+    } else if (resultBytes == 0) {
+        throw ServerException("connection closed");
+    } else if (resultBytes < 0) {
+        throw ServerException("recv failed", WSAGetLastError());
     }
 
     // allocate buffer for the new command, now that its length is known
@@ -104,9 +142,14 @@ string Server::recvCommand() {
     // receive the command to the allocated buffer
     resultBytes = recv(ClientSocket, commandBuffer, commandLen, 0);
     if (resultBytes != commandLen) {
-        // TODO replace with custom message that can be caught later
         delete[] commandBuffer;
-        throw runtime_error("invalid message, length mismatch")
+        throw ServerException("invalid message, length mismatch");
+    } else if (resultBytes == 0) {
+        delete[] commandBuffer;
+        throw ServerException("connection closed");
+    } else if (resultBytes < 0){
+        delete[] commandBuffer;
+        throw ServerException("recv failed", WSAGetLastError());
     }
 
     // convert the message to dynamic cpp string and free allocated c-style buffer
@@ -116,10 +159,12 @@ string Server::recvCommand() {
     return command
 }
 
+
 void Server::sendResponse(string response) {
     // TODO send length
     // TODO send response
 }
+
 
 void Server::handleCommand() {
     std::string command = recvCommand();
