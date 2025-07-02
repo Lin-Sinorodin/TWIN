@@ -100,9 +100,11 @@ void Server::handleClient() {
         try {
             handleCommand();
         } catch (const ServerException& e) {
-            std::err << "[!] ServerException: " << e.what() << std::endl;
+            std::cerr << "[!] ServerException: " << e.what() << std::endl;
+            break;
         } catch (const std::exception& e) {
-            std::err << "[!] Exception: " << e.what() << std::endl;
+            std::cerr << "[!] Exception: " << e.what() << std::endl;
+            break;
         }
     }
 }
@@ -127,24 +129,21 @@ string Server::recvCommand() {
 
     // receive the length of the command message
     recvBytes = recv(ClientSocket, commandLenBuffer, MESSAGE_LEN_SIZE, 0);
-    if (recvBytes != MESSAGE_LEN_SIZE) {
-        throw ServerException("invalid message length, expected DWORD");
-    } else if (recvBytes == 0) {
+    if (recvBytes == 0) {
         throw ServerException("connection closed");
     } else if (recvBytes < 0) {
         throw ServerException("recv failed", WSAGetLastError());
+    } else if (recvBytes != MESSAGE_LEN_SIZE) {
+        throw ServerException("invalid message length, expected DWORD");
     }
 
     // allocate buffer for the new command, now that its length is known
-    DWORD commandLen = static_cast<DWORD>(commandLenBuffer);
+    DWORD commandLen = *(PDWORD)commandLenBuffer;
     char* commandBuffer = new char[commandLen];
 
     // receive the command to the allocated buffer
     recvBytes = recv(ClientSocket, commandBuffer, commandLen, 0);
-    if (recvBytes != commandLen) {
-        delete[] commandBuffer;
-        throw ServerException("invalid message, length mismatch");
-    } else if (recvBytes == 0) {
+    if (recvBytes == 0) {
         delete[] commandBuffer;
         throw ServerException("connection closed");
     } else if (recvBytes < 0){
@@ -156,7 +155,8 @@ string Server::recvCommand() {
     string command{commandBuffer, commandLen};
     delete[] commandBuffer;
 
-    return command
+    std::cout << "[+] (recv) command:  " << command << std::endl;
+    return command;
 }
 
 
@@ -164,7 +164,7 @@ void Server::sendResponse(string response) {
     int sendBytes;
 
     // send response length
-    DWORD responseLength = response.length() + 1;
+    int responseLength = static_cast<int>(response.length());
     sendBytes = send(ClientSocket, (LPCSTR)(&responseLength), MESSAGE_LEN_SIZE, 0);
     if (sendBytes == SOCKET_ERROR) {
         throw ServerException("send response length failed", WSAGetLastError());
@@ -175,6 +175,8 @@ void Server::sendResponse(string response) {
     if (sendBytes == SOCKET_ERROR) {
         throw ServerException("send response failed", WSAGetLastError());
     }
+    
+    std::cout << "[+] (send) response: " << response << std::endl;
 }
 
 
@@ -182,7 +184,7 @@ void Server::handleCommand() {
     std::string command = recvCommand();
 
     // generate the response message
-    if (command.compare("PING") != 0) {
+    if (command.compare("PING") == 0) {
         sendResponse("PONG");
     } else {
         sendResponse("Unknown command");

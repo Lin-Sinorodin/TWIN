@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include <windows.h>
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -34,7 +38,7 @@ private:
 
 class Server {
 public:
-    Server(PCSTR port);
+    explicit Server(PCSTR port);
     ~Server();
 
     /* Initialize the server and move it to listening state. */

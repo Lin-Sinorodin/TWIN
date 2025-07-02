@@ -1,7 +1,7 @@
 #pragma once
 
-#include <windows.h>
 #include "server.h"
+#include <windows.h>
 
 constexpr PCSTR DEFAULT_PORT{"12345"};
 constexpr DWORD HOUR_IN_MILLISECONDS{ 1000 * 60 * 60 };  // 1 hour = 1000 milliseconds * 60 seconds * 60 minutes
@@ -13,7 +13,7 @@ constexpr LPCWSTR REGISTRY_RUN_VALUE_PATH{ L"C:\\Users\\hp\\Documents\\GitHub\\T
 
 class ManagementProgram {
 public:
-	ManagementProgram();
+	explicit ManagementProgram();
 	~ManagementProgram();
 	void setLogonRegistryEntry();
 	void showMessageBox();

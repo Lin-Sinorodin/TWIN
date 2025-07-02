@@ -2,7 +2,7 @@
 #include "Registry.h"
 
 
-ManagementProgram::ManagementProgram() {
+ManagementProgram::ManagementProgram() : server(DEFAULT_PORT) {
     m_ghMutex = CreateMutex(NULL, FALSE, PROGRAM_TITLE);
     if (m_ghMutex == NULL) {
         throw std::runtime_error("Failed to create mutex");
@@ -11,9 +11,6 @@ ManagementProgram::ManagementProgram() {
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
         throw std::runtime_error("Mutex already owned");
     }
-
-    // initialize the server
-    server = Server(DEFAULT_PORT);
 }
 
 
