@@ -42,3 +42,5 @@
 
 *.vs
 /Technician/x64
+/.idea
+.DS_Store
