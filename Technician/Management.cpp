@@ -17,7 +17,8 @@ ManagementProgram::~ManagementProgram() {
 
 
 void ManagementProgram::setLogonRegistryEntry() {
-    addLogonRegistryEntry(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
+    Registry logonRegistry{ LOGON_KEY, LOGON_SUBKEY };
+    logonRegistry.addEntryIfNotExists(REGISTRY_RUN_VALUE_NAME, REGISTRY_RUN_VALUE_PATH);
 }
 
 
