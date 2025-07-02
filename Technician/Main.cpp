@@ -4,7 +4,7 @@
 
 int main() {
     try {
-        ManagementProgram prog = ManagementProgram{};
+        ManagementProgram prog{};
         prog.setLogonRegistryEntry();
         prog.showMessageBox();
         prog.runProgram();

@@ -2,19 +2,30 @@
 #include "Registry.h"
 
 
+MutexException::MutexException(string error, DWORD code) : m_error(std::move(error)) {
+    m_error += " (code = " + std::to_string(code) + ")";
+}
+
+
+const char* MutexException::what() const noexcept {
+    return m_error.c_str();
+}
+
+
 ManagementProgram::ManagementProgram() {
-    m_ghMutex = CreateMutex(NULL, FALSE, PROGRAM_TITLE);
+    m_ghMutex = CreateMutex(NULL, FALSE, PROGRAM_TITLE.c_str());
     if (m_ghMutex == NULL) {
-        throw std::runtime_error("Failed to create mutex");
+        throw MutexException("Failed to create mutex", GetLastError());
     }
     
     if (GetLastError() == ERROR_ALREADY_EXISTS) {
-        throw std::runtime_error("Mutex already owned");
+        throw MutexException("Mutex already owned", ERROR_ALREADY_EXISTS);
     }
 }
 
 
 ManagementProgram::~ManagementProgram() {
+    ReleaseMutex(m_ghMutex);
     CloseHandle(m_ghMutex);
 }
 
@@ -26,7 +37,7 @@ void ManagementProgram::setLogonRegistryEntry() {
 
 
 void ManagementProgram::showMessageBox() {
-    MessageBox(NULL, PROGRAM_MESSAGE, PROGRAM_TITLE, MB_OK);
+    MessageBox(NULL, PROGRAM_MESSAGE.c_str(), PROGRAM_TITLE.c_str(), MB_OK);
 }
 
 
