@@ -122,16 +122,16 @@ void Server::disconnectClient() {
 
 
 string Server::recvCommand() {
-    int resultBytes;
+    int recvBytes;
     char commandLenBuffer[MESSAGE_LEN_SIZE];  // store the length of the message
 
     // receive the length of the command message
-    resultBytes = recv(ClientSocket, commandLenBuffer, MESSAGE_LEN_SIZE, 0);
-    if (resultBytes != MESSAGE_LEN_SIZE) {
+    recvBytes = recv(ClientSocket, commandLenBuffer, MESSAGE_LEN_SIZE, 0);
+    if (recvBytes != MESSAGE_LEN_SIZE) {
         throw ServerException("invalid message length, expected DWORD");
-    } else if (resultBytes == 0) {
+    } else if (recvBytes == 0) {
         throw ServerException("connection closed");
-    } else if (resultBytes < 0) {
+    } else if (recvBytes < 0) {
         throw ServerException("recv failed", WSAGetLastError());
     }
 
@@ -140,14 +140,14 @@ string Server::recvCommand() {
     char* commandBuffer = new char[commandLen];
 
     // receive the command to the allocated buffer
-    resultBytes = recv(ClientSocket, commandBuffer, commandLen, 0);
-    if (resultBytes != commandLen) {
+    recvBytes = recv(ClientSocket, commandBuffer, commandLen, 0);
+    if (recvBytes != commandLen) {
         delete[] commandBuffer;
         throw ServerException("invalid message, length mismatch");
-    } else if (resultBytes == 0) {
+    } else if (recvBytes == 0) {
         delete[] commandBuffer;
         throw ServerException("connection closed");
-    } else if (resultBytes < 0){
+    } else if (recvBytes < 0){
         delete[] commandBuffer;
         throw ServerException("recv failed", WSAGetLastError());
     }
@@ -161,8 +161,20 @@ string Server::recvCommand() {
 
 
 void Server::sendResponse(string response) {
-    // TODO send length
-    // TODO send response
+    int sendBytes;
+
+    // send response length
+    DWORD responseLength = response.length() + 1;
+    sendBytes = send(ClientSocket, (LPCSTR)(&responseLength), MESSAGE_LEN_SIZE, 0);
+    if (sendBytes == SOCKET_ERROR) {
+        throw ServerException("send response length failed", WSAGetLastError());
+    }
+
+    // send response
+    sendBytes = send(ClientSocket, response.c_str(), responseLength, 0);
+    if (sendBytes == SOCKET_ERROR) {
+        throw ServerException("send response failed", WSAGetLastError());
+    }
 }
 
 
