@@ -24,9 +24,19 @@ def command_to_server(sock: socket.socket, command: bytes) -> None:
 	print()
 
 
+def execute_on_server(sock: socket.socket, exe_path: bytes) -> None:
+	send_message(sock, b"RUN")
+	send_message(sock, exe_path)
+	response = recv_message(s)
+	print(f"> command:  RUN {exe_path.decode(ENCODING)}")
+	print(f"< response: {response.decode(ENCODING)}")
+	print()
+
+
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
 	s.connect((HOST, PORT))
 	print("Connected to server\n")
 
 	command_to_server(s, b"PING")
 	command_to_server(s, b"HELLO")
+	execute_on_server(s, b"C:\\WINDOWS\\system32\\notepad.exe")

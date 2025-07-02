@@ -191,6 +191,29 @@ void Server::sendResponse(string response) {
 }
 
 
+string handleRunCommand(string filePath) {
+    string response{};
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    BOOL succeed = CreateProcessA(
+        filePath.c_str(), NULL, NULL, NULL, FALSE, DETACHED_PROCESS, NULL, NULL, &si, &pi
+    );
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    if (succeed) {
+        response += "Succeed";
+    }
+    else {
+        response += "Failed, error code: " + std::to_string(GetLastError());
+    }
+    return response;
+}
+
 void Server::handleCommand() {
     string command = recvCommand();
 
@@ -199,19 +222,8 @@ void Server::handleCommand() {
             sendResponse("PONG");
             break;
         case RUN_COMMAND:
-            string filePath{recvCommand()};
-            string response{};
-            STARTUPINFO si;
-            PROCESS_INFORMATION pi;
-            BOOL succeed = CreateProcessA(
-                filePath.c_str(), NULL, NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi
-            );
-            if (succeed) {
-                response += "Succeed";
-            } else {
-                response += "Failed, error code: " + std::to_string(GetLastError());
-            }
-            sendResponse(response);
+            command = recvCommand();
+            sendResponse(handleRunCommand(command));
             break;
         case UNKNOWN_COMMAND:
             sendResponse("Unknown command");
